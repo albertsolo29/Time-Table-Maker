@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0b;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(20, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(45deg, #ffffff, #fbbf24, #ffffff);
+            background-size: 200% 200%;
+            animation: shimmer 3s ease-in-out infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .form-section {
+            padding: 40px;
+            background: rgba(30, 30, 35, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .form-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(40, 40, 50, 0.8);
+            color: #ffffff;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 
+                0 0 0 3px rgba(99, 102, 241, 0.1),
+                0 8px 20px rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .form-control option {
+            background: #2a2a35;
+            color: #ffffff;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(239, 68, 68, 0.4);
+        }
+
+        .timetable-section {
+            padding: 40px;
+            background: rgba(20, 20, 25, 0.4);
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(30, 30, 35, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .timetable th, .timetable td {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 12px;
+            text-align: center;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .timetable th {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .timetable th::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+        }
+
+        .timetable td {
+            height: 90px;
+            vertical-align: middle;
+            background: rgba(40, 40, 50, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .timetable td:hover {
+            background: rgba(60, 60, 70, 0.4);
+        }
+
+        .course-block {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .course-block:hover::before {
+            left: 100%;
+        }
+
+        .course-block:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 
+                0 12px 35px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .course-code {
+            font-weight: 800;
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        .course-room {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .course-type {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 6px;
+            padding: 3px 8px;
+            margin: 3px 0;
+            font-weight: 700;
+            font-size: 10px;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .course-list {
+            background: rgba(30, 30, 35, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .course-list h3 {
+            color: #ffffff;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .course-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin: 12px 0;
+            background: rgba(40, 40, 50, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .course-item:hover {
+            transform: translateX(8px);
+            border-color: #6366f1;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
+
+        .course-info {
+            flex-grow: 1;
+            color: #ffffff;
+        }
+
+        .course-info strong {
+            color: #6366f1;
+            font-size: 1.1em;
+        }
+
+        .course-info small {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        #downloadBtn {
+            display: none;
+        }
+
+        .color-options {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(40, 40, 50, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-options span {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .color-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(45deg, #6366f1, #8b5cf6, #ec4899);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: xor;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .color-box:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .color-box:hover::before {
+            opacity: 1;
+        }
+
+        .color-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .color-2 { background: linear-gradient(135deg, #ec4899, #f97316); }
+        .color-3 { background: linear-gradient(135deg, #10b981, #059669); }
+        .color-4 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .color-5 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .color-6 { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+        @media (max-width: 768px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .timetable {
+                font-size: 10px;
+            }
+            
+            .timetable th, .timetable td {
+                padding: 8px 4px;
+            }
+            
+            .course-block {
+                padding: 4px;
+                font-size: 9px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Timetable Generator</h1>
+            <p>Create your personalized class schedule</p>
+        </div>
+
+        <div class="form-section">
+            <h2>Add Course Information</h2>
+            <div class="input-group">
+                <input type="text" id="courseCode" class="form-control" placeholder="Course Code (e.g., COMP 2611)">
+                <select id="courseType" class="form-control">
+                    <option value="">Select Type</option>
+                    <option value="Lecture">Lecture</option>
+                    <option value="Lab">Lab</option>
+                    <option value="Tutorial">Tutorial</option>
+                </select>
+                <select id="daySelect" class="form-control">
+                    <option value="">Select Day</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Saturday">Saturday</option>
+                </select>
+                <select id="startTime" class="form-control">
+                    <option value="">Start Time</option>
+                    <option value="8">8:00 AM</option>
+                    <option value="9">9:00 AM</option>
+                    <option value="10">10:00 AM</option>
+                    <option value="11">11:00 AM</option>
+                    <option value="12">12:00 PM</option>
+                    <option value="13">1:00 PM</option>
+                    <option value="14">2:00 PM</option>
+                    <option value="15">3:00 PM</option>
+                    <option value="16">4:00 PM</option>
+                    <option value="17">5:00 PM</option>
+                </select>
+                <select id="endTime" class="form-control">
+                    <option value="">End Time</option>
+                    <option value="9">9:00 AM</option>
+                    <option value="10">10:00 AM</option>
+                    <option value="11">11:00 AM</option>
+                    <option value="12">12:00 PM</option>
+                    <option value="13">1:00 PM</option>
+                    <option value="14">2:00 PM</option>
+                    <option value="15">3:00 PM</option>
+                    <option value="16">4:00 PM</option>
+                    <option value="17">5:00 PM</option>
+                    <option value="18">6:00 PM</option>
+                </select>
+                <input type="text" id="roomLocation" class="form-control" placeholder="Room/Location">
+            </div>
+            
+            <div class="color-options">
+                <span>Choose Color:</span>
+                <div class="color-box color-1" data-color="1"></div>
+                <div class="color-box color-2" data-color="2"></div>
+                <div class="color-box color-3" data-color="3"></div>
+                <div class="color-box color-4" data-color="4"></div>
+                <div class="color-box color-5" data-color="5"></div>
+                <div class="color-box color-6" data-color="6"></div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="addCourse()">Add Course</button>
+                <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+                <button class="btn btn-success" onclick="generateTimetable()">Generate Timetable</button>
+                <button class="btn btn-success" id="downloadBtn" onclick="downloadTimetable()">Download as Image</button>
+            </div>
+        </div>
+
+        <div class="timetable-section">
+            <div id="coursesList" class="course-list" style="display: none;">
+                <h3>Added Courses:</h3>
+                <div id="coursesContainer"></div>
+            </div>
+
+            <div id="timetableContainer">
+                <table class="timetable" id="timetable">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Day/Time</th>
+                            <th>8:00 AM</th>
+                            <th>9:00 AM</th>
+                            <th>10:00 AM</th>
+                            <th>11:00 AM</th>
+                            <th>12:00 PM</th>
+                            <th>1:00 PM</th>
+                            <th>2:00 PM</th>
+                            <th>3:00 PM</th>
+                            <th>4:00 PM</th>
+                            <th>5:00 PM</th>
+                        <tr>
+                            <td><strong>Saturday</strong></td>
+                            <td data-day="Saturday" data-time="8"></td>
+                            <td data-day="Saturday" data-time="9"></td>
+                            <td data-day="Saturday" data-time="10"></td>
+                            <td data-day="Saturday" data-time="11"></td>
+                            <td data-day="Saturday" data-time="12"></td>
+                            <td data-day="Saturday" data-time="13"></td>
+                            <td data-day="Saturday" data-time="14"></td>
+                            <td data-day="Saturday" data-time="15"></td>
+                            <td data-day="Saturday" data-time="16"></td>
+                            <td data-day="Saturday" data-time="17"></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Monday</strong></td>
+                            <td data-day="Monday" data-time="8"></td>
+                            <td data-day="Monday" data-time="9"></td>
+                            <td data-day="Monday" data-time="10"></td>
+                            <td data-day="Monday" data-time="11"></td>
+                            <td data-day="Monday" data-time="12"></td>
+                            <td data-day="Monday" data-time="13"></td>
+                            <td data-day="Monday" data-time="14"></td>
+                            <td data-day="Monday" data-time="15"></td>
+                            <td data-day="Monday" data-time="16"></td>
+                            <td data-day="Monday" data-time="17"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tuesday</strong></td>
+                            <td data-day="Tuesday" data-time="8"></td>
+                            <td data-day="Tuesday" data-time="9"></td>
+                            <td data-day="Tuesday" data-time="10"></td>
+                            <td data-day="Tuesday" data-time="11"></td>
+                            <td data-day="Tuesday" data-time="12"></td>
+                            <td data-day="Tuesday" data-time="13"></td>
+                            <td data-day="Tuesday" data-time="14"></td>
+                            <td data-day="Tuesday" data-time="15"></td>
+                            <td data-day="Tuesday" data-time="16"></td>
+                            <td data-day="Tuesday" data-time="17"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Wednesday</strong></td>
+                            <td data-day="Wednesday" data-time="8"></td>
+                            <td data-day="Wednesday" data-time="9"></td>
+                            <td data-day="Wednesday" data-time="10"></td>
+                            <td data-day="Wednesday" data-time="11"></td>
+                            <td data-day="Wednesday" data-time="12"></td>
+                            <td data-day="Wednesday" data-time="13"></td>
+                            <td data-day="Wednesday" data-time="14"></td>
+                            <td data-day="Wednesday" data-time="15"></td>
+                            <td data-day="Wednesday" data-time="16"></td>
+                            <td data-day="Wednesday" data-time="17"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Thursday</strong></td>
+                            <td data-day="Thursday" data-time="8"></td>
+                            <td data-day="Thursday" data-time="9"></td>
+                            <td data-day="Thursday" data-time="10"></td>
+                            <td data-day="Thursday" data-time="11"></td>
+                            <td data-day="Thursday" data-time="12"></td>
+                            <td data-day="Thursday" data-time="13"></td>
+                            <td data-day="Thursday" data-time="14"></td>
+                            <td data-day="Thursday" data-time="15"></td>
+                            <td data-day="Thursday" data-time="16"></td>
+                            <td data-day="Thursday" data-time="17"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Friday</strong></td>
+                            <td data-day="Friday" data-time="8"></td>
+                            <td data-day="Friday" data-time="9"></td>
+                            <td data-day="Friday" data-time="10"></td>
+                            <td data-day="Friday" data-time="11"></td>
+                            <td data-day="Friday" data-time="12"></td>
+                            <td data-day="Friday" data-time="13"></td>
+                            <td data-day="Friday" data-time="14"></td>
+                            <td data-day="Friday" data-time="15"></td>
+                            <td data-day="Friday" data-time="16"></td>
+                            <td data-day="Friday" data-time="17"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        let courses = [];
+        let selectedColor = '1';
+
+        // Color selection with modern effects
+        document.querySelectorAll('.color-box').forEach(box => {
+            box.addEventListener('click', function() {
+                document.querySelectorAll('.color-box').forEach(b => {
+                    b.style.borderColor = 'transparent';
+                    b.style.boxShadow = 'none';
+                });
+                this.style.borderColor = '#6366f1';
+                this.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.3), 0 8px 25px rgba(99, 102, 241, 0.4)';
+                selectedColor = this.dataset.color;
+            });
+        });
+
+        // Set default color selection with modern styling
+        const defaultColor = document.querySelector('.color-box');
+        defaultColor.style.borderColor = '#6366f1';
+        defaultColor.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.3), 0 8px 25px rgba(99, 102, 241, 0.4)';
+
+        function addCourse() {
+            const courseCode = document.getElementById('courseCode').value;
+            const courseType = document.getElementById('courseType').value;
+            const day = document.getElementById('daySelect').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const roomLocation = document.getElementById('roomLocation').value;
+
+            if (!courseCode || !courseType || !day || !startTime || !endTime || !roomLocation) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            if (parseInt(startTime) >= parseInt(endTime)) {
+                alert('End time must be after start time!');
+                return;
+            }
+
+            const course = {
+                code: courseCode,
+                type: courseType,
+                day: day,
+                startTime: parseInt(startTime),
+                endTime: parseInt(endTime),
+                room: roomLocation,
+                color: selectedColor,
+                id: Date.now()
+            };
+
+            courses.push(course);
+            updateCoursesList();
+            clearForm();
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+        }
+
+        function clearForm() {
+            document.getElementById('courseCode').value = '';
+            document.getElementById('courseType').value = '';
+            document.getElementById('daySelect').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            document.getElementById('roomLocation').value = '';
+        }
+
+        function updateCoursesList() {
+            const container = document.getElementById('coursesContainer');
+            const coursesList = document.getElementById('coursesList');
+            
+            if (courses.length === 0) {
+                coursesList.style.display = 'none';
+                return;
+            }
+            
+            coursesList.style.display = 'block';
+            container.innerHTML = '';
+            
+            courses.forEach(course => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                courseDiv.innerHTML = `
+                    <div class="course-info">
+                        <strong>${course.code}</strong> - ${course.type}<br>
+                        <small>${course.day}, ${formatTime(course.startTime)} - ${formatTime(course.endTime)} | Room: ${course.room}</small>
+                    </div>
+                    <button class="btn btn-danger" onclick="removeCourse(${course.id})" style="padding: 5px 10px; font-size: 12px;">Remove</button>
+                `;
+                container.appendChild(courseDiv);
+            });
+        }
+
+        function removeCourse(id) {
+            courses = courses.filter(course => course.id !== id);
+            updateCoursesList();
+            generateTimetable();
+            
+            if (courses.length === 0) {
+                document.getElementById('downloadBtn').style.display = 'none';
+            }
+        }
+
+        function formatTime(hour) {
+            if (hour < 12) {
+                return hour === 0 ? '12:00 AM' : `${hour}:00 AM`;
+            } else if (hour === 12) {
+                return '12:00 PM';
+            } else {
+                return `${hour - 12}:00 PM`;
+            }
+        }
+
+        function generateTimetable() {
+            // Clear existing content
+            document.querySelectorAll('[data-day][data-time]').forEach(cell => {
+                cell.innerHTML = '';
+            });
+
+            courses.forEach(course => {
+                const startTime = course.startTime;
+                const endTime = course.endTime;
+                const duration = endTime - startTime;
+
+                const startCell = document.querySelector(`[data-day="${course.day}"][data-time="${startTime}"]`);
+                if (startCell) {
+                    const courseBlock = document.createElement('div');
+                    courseBlock.className = 'course-block';
+                    courseBlock.classList.add(`color-${course.color}`);
+                    
+                    courseBlock.innerHTML = `
+                        <div class="course-type">${course.type}</div>
+                        <div class="course-code">${course.code}</div>
+                        <div class="course-room">Room: ${course.room}</div>
+                    `;
+
+                    startCell.appendChild(courseBlock);
+
+                    // Handle multi-hour courses
+                    if (duration > 1) {
+                        for (let i = 1; i < duration; i++) {
+                            const nextTime = startTime + i;
+                            const nextCell = document.querySelector(`[data-day="${course.day}"][data-time="${nextTime}"]`);
+                            if (nextCell) {
+                                const continueBlock = document.createElement('div');
+                                continueBlock.className = 'course-block';
+                                continueBlock.classList.add(`color-${course.color}`);
+                                continueBlock.style.opacity = '0.7';
+                                continueBlock.innerHTML = `
+                                    <div class="course-type">${course.type}</div>
+                                    <div class="course-code">${course.code}</div>
+                                    <div class="course-room">Room: ${course.room}</div>
+                                `;
+                                nextCell.appendChild(continueBlock);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all courses?')) {
+                courses = [];
+                updateCoursesList();
+                generateTimetable();
+                document.getElementById('downloadBtn').style.display = 'none';
+            }
+        }
+
+        function downloadTimetable() {
+            const timetable = document.getElementById('timetable');
+            
+            // Create a temporary wrapper for better styling
+            const wrapper = document.createElement('div');
+            wrapper.style.background = 'white';
+            wrapper.style.padding = '20px';
+            wrapper.style.fontFamily = 'Arial, sans-serif';
+            
+            const title = document.createElement('h2');
+            title.textContent = 'My Class Timetable';
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '20px';
+            title.style.color = '#2c3e50';
+            
+            wrapper.appendChild(title);
+            wrapper.appendChild(timetable.cloneNode(true));
+            
+            document.body.appendChild(wrapper);
+            
+            html2canvas(wrapper, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                // Convert to JPEG
+                const link = document.createElement('a');
+                link.download = 'my-timetable.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                
+                // Clean up
+                document.body.removeChild(wrapper);
+            }).catch(error => {
+                console.error('Error generating image:', error);
+                alert('Error generating image. Please try again.');
+                document.body.removeChild(wrapper);
+            });
+        }
+
+        // Initialize with empty timetable
+        generateTimetable();
+    </script>
+</body>
+</html>
